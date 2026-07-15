@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WOPR TERMINAL v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    height: 100vh; width: 100vw; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'VT323', 'Courier New', monospace;
+  }
+
+  /* CRT MONITOR FRAME */
+  .monitor {
+    width: min(95vw, 960px);
+    height: min(85vh, 720px);
+    background: #050805;
+    border: 3px solid #1a1a1a;
+    border-radius: 28px 28px 24px 24px;
+    box-shadow:
+      inset 0 0 60px rgba(0,20,0,0.5),
+      0 0 80px rgba(0,255,0,0.03),
+      0 0 0 8px #111,
+      0 0 0 12px #222;
+    position: relative;
+    overflow: hidden;
+    padding: 30px 40px 20px;
+  }
+
+  /* POWER LED */
+  .monitor::before {
+    content: '';
+    position: absolute;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    width: 8px; height: 8px;
+    background: #0f0;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #0f0, 0 0 12px rgba(0,255,0,0.3);
+    animation: powerPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes powerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* SCREEN CURVATURE */
+  .monitor::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: radial-gradient(ellipse at center, transparent 65%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* SCANLINES */
+  .scanlines {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 11;
+  }
+
+  /* SUBTLE SCREEN FLICKER */
+  .flicker {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: transparent;
+    pointer-events: none;
+    z-index: 12;
+    animation: screenFlicker 8s infinite;
+  }
+  @keyframes screenFlicker {
+    0%, 100% { opacity: 0; }
+    5% { opacity: 0.02; }
+    6% { opacity: 0; }
+    45% { opacity: 0; }
+    48% { opacity: 0.015; }
+    49% { opacity: 0; }
+  }
+
+  /* TERMINAL SCREEN CONTENT */
+  .screen {
+    position: relative;
+    width: 100%; height: 100%;
+    background: transparent;
+    color: #33ff33;
+    font-family: 'VT323', 'Courier New', monospace;
+    font-size: 18px;
+    line-height: 1.25;
+    text-shadow: 0 0 4px rgba(51,255,51,0.5), 0 0 8px rgba(51,255,51,0.2);
+    z-index: 5;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  #output {
+    flex: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 4px;
+    scrollbar-width: none;
+  }
+  #output::-webkit-scrollbar { display: none; }
+
+  #output .dim { color: #1a8a1a; text-shadow: 0 0 2px rgba(26,138,26,0.3); }
+  #output .accent { color: #66ff66; text-shadow: 0 0 6px rgba(102,255,102,0.6); }
+  #output .warning { color: #ffaa33; text-shadow: 0 0 6px rgba(255,170,51,0.4); }
+  #output .error { color: #ff4444; text-shadow: 0 0 6px rgba(255,68,68,0.4); }
+  #output .highlight { color: #88ff88; text-shadow: 0 0 8px rgba(136,255,136,0.7); }
+  #output .title { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.7); font-weight: bold; }
+
+  .input-line {
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-top: 1px solid rgba(51,255,51,0.1);
+    background: rgba(0,10,0,0.3);
+  }
+  .input-line .prompt {
+    color: #33ff33;
+    text-shadow: 0 0 4px rgba(51,255,51,0.5);
+    margin-right: 6px;
+  }
+  .input-line input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #33ff33;
+    font-family: 'VT323', 'Courier New', monospace;
+    font-size: 18px;
+    text-shadow: 0 0 4px rgba(51,255,51,0.3);
+    caret-color: #33ff33;
+  }
+  .input-line input::placeholder { color: #0a3a0a; }
+
+  /* BLINKING CURSOR OVERLAY (when typing animation plays) */
+  .cursor-blink {
+    display: inline-block;
+    width: 10px;
+    height: 1.1em;
+    background: #33ff33;
+    box-shadow: 0 0 6px #33ff33;
+    animation: blink 0.8s step-end infinite;
+    vertical-align: text-bottom;
+    margin-left: 2px;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* BOOT SEQUENCE BARS */
+  .boot-bar {
+    display: inline-block;
+    height: 1em;
+    background: #33ff33;
+    box-shadow: 0 0 6px rgba(51,255,51,0.5);
+    vertical-align: middle;
+    margin-right: 4px;
+    transition: width 0.1s;
+  }
+
+  @media (max-width: 768px) {
+    .monitor { padding: 16px 20px 12px; height: 90vh; width: 98vw; border-radius: 16px; }
+    .screen { font-size: 14px; }
+    .input-line input { font-size: 14px; }
+  }
+
+  /* TINY GREEN NOISE OVERLAY */
+  .noise {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    opacity: 0.015;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 13;
+    mix-blend-mode: overlay;
+  }
+</style>
+</head>
+<body>
+<div class="monitor">
+  <div class="scanlines"></div>
+  <div class="flicker"></div>
+  <div class="noise"></div>
+  <div class="screen">
+    <div id="output"><span class="dim">WOPR SYSTEM v1.0<br>WAR OPERATIONS PLANNED RESPONSE<br>NORAD — CHEYENNE MOUNTAIN COMPLEX<br>&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;<br><br></span></div>
+    <div class="input-line" id="inputLine">
+      <span class="prompt" id="prompt">&gt;</span>
+      <input type="text" id="userInput" autofocus spellcheck="false" autocomplete="off" placeholder="...">
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const output = document.getElementById('output');
+  const inputEl = document.getElementById('userInput');
+  const promptEl = document.getElementById('prompt');
+  const inputLine = document.getElementById('inputLine');
+
+  let busy = false;
+  let state = 'boot';
+  let inputBuffer = '';
+
+  // ─── TYPING ANIMATION ──────────────────────────────────────
+  function typeText(text, speed=25, cls='') {
+    return new Promise(resolve => {
+      // Remove cursor blink if present
+      const cursor = output.querySelector('.cursor-blink');
+      if (cursor) cursor.remove();
+
+      const span = document.createElement('span');
+      if (cls) span.className = cls;
+      output.appendChild(span);
+
+      let i = 0;
+      const chars = [...text];
+      function tick() {
+        if (i >= chars.length) {
+          // Re-append cursor
+          const cur = document.createElement('span');
+          cur.className = 'cursor-blink';
+          output.appendChild(cur);
+          output.scrollTop = output.scrollHeight;
+          resolve();
+          return;
+        }
+        const n = Math.min(3, chars.length - i);
+        span.textContent += chars.slice(i, i + n).join('');
+        i += n;
+        output.scrollTop = output.scrollHeight;
+        // Random speed variation
+        const delay = speed * (0.5 + Math.random());
+        setTimeout(tick, delay);
+      }
+      tick();
+    });
+  }
+
+  function typeLines(lines, speed=25, delay=300) {
+    return lines.reduce((p, l) => {
+      const cls = l.cls || '';
+      const text = l.text + '\n';
+      return p.then(() => typeText(text, speed, cls)).then(() => new Promise(r => setTimeout(r, delay)));
+    }, Promise.resolve());
+  }
+
+  function writeLine(text, cls='') {
+    const cursor = output.querySelector('.cursor-blink');
+    if (cursor) cursor.remove();
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text + '\n';
+    output.appendChild(span);
+    const cur = document.createElement('span');
+    cur.className = 'cursor-blink';
+    output.appendChild(cur);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function writeRaw(text, cls='') {
+    const cursor = output.querySelector('.cursor-blink');
+    if (cursor) cursor.remove();
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text;
+    output.appendChild(span);
+    const cur = document.createElement('span');
+    cur.className = 'cursor-blink';
+    output.appendChild(cur);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function setPrompt(p) {
+    promptEl.textContent = p;
+  }
+
+  function showInput(show=true) {
+    inputLine.style.display = show ? 'flex' : 'none';
+    if (show) { inputEl.focus(); }
+  }
+
+  function waitForInput() {
+    return new Promise(resolve => {
+      inputBuffer = '';
+      inputEl.value = '';
+      inputEl.placeholder = 'type a command...';
+      inputEl.focus();
+      const handler = (e) => {
+        if (e.key === 'Enter') {
+          const val = inputEl.value.trim();
+          if (!val) return;
+          inputBuffer = val;
+          inputEl.value = '';
+          inputEl.placeholder = '...';
+          writeLine('> ' + val.toUpperCase(), 'accent');
+          inputEl.removeEventListener('keydown', handler);
+          resolve(val.toUpperCase());
+        }
+      };
+      inputEl.addEventListener('keydown', handler);
+    });
+  }
+
+  function waitForInputAny() {
+    return new Promise(resolve => {
+      inputBuffer = '';
+      inputEl.value = '';
+      inputEl.placeholder = 'press ENTER to continue...';
+      inputEl.focus();
+      const handler = (e) => {
+        if (e.key === 'Enter') {
+          inputEl.value = '';
+          inputEl.placeholder = '...';
+          inputEl.removeEventListener('keydown', handler);
+          resolve();
+        }
+      };
+      inputEl.addEventListener('keydown', handler);
+    });
+  }
+
+  // ─── BOOT SEQUENCE ─────────────────────────────────────────
+  async function bootSequence() {
+    state = 'boot';
+    setPrompt('');
+    showInput(false);
+    output.innerHTML = '<span class="dim">WOPR SYSTEM v1.0<br>WAR OPERATIONS PLANNED RESPONSE<br>NORAD — CHEYENNE MOUNTAIN COMPLEX<br>\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500<br><br></span>';
+    output.appendChild(document.createElement('span'));
+
+    await typeLines([
+      { text: 'INITIATING SYSTEM BOOT SEQUENCE...', cls: 'dim', speed: 20 },
+    ], 20, 200);
+
+    // Memory test
+    await typeText('MEMORY TEST', 1, 'dim');
+    const memSpan = document.createElement('span');
+    memSpan.className = 'dim';
+    output.appendChild(memSpan);
+    for (let mb = 0; mb <= 640; mb += 64) {
+      memSpan.textContent = `... ${mb}K OK`;
+      output.scrollTop = output.scrollHeight;
+      await new Promise(r => setTimeout(r, 30));
+    }
+    writeLine(' 640K OK');
+    await new Promise(r => setTimeout(r, 300));
+
+    await typeLines([
+      { text: 'INITIALIZING SYSTEM INTERRUPTS... OK', cls: 'dim' },
+      { text: 'LOADING OPERATING SYSTEM... OK', cls: 'dim' },
+    ], 20, 200);
+
+    // Disk check animation
+    const diskText = 'VERIFYING DISK INTEGRITY...';
+    await typeText(diskText, 10, 'dim');
+    for (let pct = 0; pct <= 100; pct += 5) {
+      writeRaw(`\r${diskText} ${pct}%`, 'dim');
+      await new Promise(r => setTimeout(r, 40 + Math.random() * 30));
+    }
+    writeLine('  COMPLETE');
+
+    await typeLines([
+      { text: 'INITIALIZING PERIPHERALS... OK', cls: 'dim' },
+      { text: '', speed: 100 },
+      { text: 'WOPR SYSTEM READY.', cls: 'accent', speed: 40 },
+    ], 20, 200);
+
+    await new Promise(r => setTimeout(r, 500));
+
+    // Modem dialing
+    state = 'dial';
+    await typeLines([
+      { text: '', speed: 100 },
+      { text: 'ATDT 415-555-2368', cls: 'warning', speed: 30 },
+    ], 20, 400);
+
+    await typeText('\r\n', 1);
+    const dialLines = [
+      'CARRIER DETECTED',
+      'CONNECT 1200 BAUD',
+      'PROTOCOL: XMODEM-CRC',
+      'SECURITY CHECK: BYPASSING STANDARD AUTHENTICATION...',
+      'BACKDOOR DETECTED: SEARCH ALGORITHM REQUIRED',
+    ];
+    for (const line of dialLines) {
+      await typeText(line + '\n', 40, 'dim');
+      await new Promise(r => setTimeout(r, 300 + Math.random() * 400));
+    }
+
+    await new Promise(r => setTimeout(r, 600));
+    state = 'login';
+    showInput(true);
+    setPrompt('>');
+    await typeText('\n', 1);
+  }
+
+  // ─── LOGIN / FALKEN ───────────────────────────────────────
+  async function loginPhase() {
+    state = 'login';
+    await typeLines([
+      { text: ' ', speed: 1 },
+      { text: '\u2500' .repeat(45), cls: 'dim' },
+      { text: '  NORAD CHEYENNE MOUNTAIN COMPLEX', cls: 'title' },
+      { text: '  WOPR COMMAND AND CONTROL SYSTEM', cls: 'title' },
+      { text: '  CLASSIFIED COMPUTER ACCESS', cls: 'title' },
+      { text: '\u2500' .repeat(45), cls: 'dim' },
+    ], 20, 150);
+
+    await typeText('\nLOGON: PLEASE ENTER YOUR PASSWORD\n\n', 25, 'highlight');
+    setPrompt('PASSWORD:');
+
+    let pwd = await waitForInput();
+    state = 'searching';
+    showInput(false);
+
+    await typeText(`\nSEARCHING USER DATABASE...`, 10, 'dim');
+    for (let i = 0; i < 15; i++) {
+      writeRaw(`\rSEARCHING USER DATABASE${'.'.repeat((i % 3) + 1)}   `, 'dim');
+      await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
+    }
+    writeLine('  NOT FOUND');
+
+    await typeText('\nACCESS DENIED. RETRYING WITH BACKDOOR SEQUENCE...\n', 20, 'warning');
+    await new Promise(r => setTimeout(r, 400));
+
+    writeRaw('\nSEARCH ALGORITHM: ', 'highlight');
+    for (const ch of 'FALKEN') {
+      writeRaw(ch, 'accent');
+      await new Promise(r => setTimeout(r, 200 + Math.random() * 150));
+    }
+    writeLine('');
+
+    await typeText('\nDECODING...\n', 15, 'dim');
+    for (let i = 0; i < 8; i++) {
+      writeRaw(`\rDECODING${'.'.repeat((i % 3) + 1)}   `, 'dim');
+      await new Promise(r => setTimeout(r, 300 + Math.random() * 400));
+    }
+    writeLine('  ACCESS GRANTED');
+
+    await new Promise(r => setTimeout(r, 600));
+
+    state = 'greeting';
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '\u2500' .repeat(45), cls: 'dim' },
+      { text: '', speed: 1 },
+    ], 1, 100);
+
+    await typeText('  ', 1);
+    await typeText('GREETINGS.', 50, 'title');
+    await new Promise(r => setTimeout(r, 800));
+
+    await typeText('\n  ', 1);
+    await typeText('PROFESSOR FALKEN.', 50, 'title');
+    await new Promise(r => setTimeout(r, 800));
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '\u2500' .repeat(45), cls: 'dim' },
+    ], 1, 400);
+
+    state = 'menu';
+    await mainMenu();
+  }
+
+  // ─── MAIN MENU ────────────────────────────────────────────
+  async function mainMenu() {
+    state = 'menu';
+    showInput(true);
+    setPrompt('>');
+    const hyphens = '\u2500'.repeat(45);
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '  SHALL WE PLAY A GAME?', cls: 'highlight', speed: 40 },
+      { text: '', speed: 1 },
+      { text: `  ${hyphens}`, cls: 'dim' },
+      { text: '   CHESS', cls: 'dim' },
+      { text: '   POKER', cls: 'dim' },
+      { text: '   FIGHTER COMBAT', cls: 'dim' },
+      { text: '   GUERRILLA ENGAGEMENT', cls: 'dim' },
+      { text: '   DESERT WARFARE', cls: 'dim' },
+      { text: '   AIR-TO-GROUND ACTIONS', cls: 'dim' },
+      { text: '   THEATREWIDE TACTICAL WARFARE', cls: 'dim' },
+      { text: '   THEATREWIDE BIOTOXIC AND CHEMICAL WARFARE', cls: 'dim' },
+      { text: '', speed: 1 },
+      { text: '   GLOBAL THERMONUCLEAR WAR', cls: 'accent', speed: 30 },
+      { text: `  ${hyphens}`, cls: 'dim' },
+      { text: '', speed: 1 },
+      { text: '  SELECT A GAME, OR TYPE "LIST" TO SEE OPTIONS.', cls: 'dim' },
+    ], 20, 120);
+
+    let choice = '';
+    while (true) {
+      choice = (await waitForInput()).replace(/[^A-Z0-9 ]/g, '');
+      const upper = choice.toUpperCase();
+
+      if (upper.includes('GLOBAL') || upper.includes('THERMONUCLEAR') || upper.includes('WAR')) {
+        break;
+      } else if (upper === 'LIST' || upper === '?') {
+        await typeLines([
+          { text: '  AVAILABLE GAMES:', cls: 'dim' },
+          { text: '  CHESS, POKER, FIGHTER COMBAT', cls: 'dim' },
+          { text: '  GUERRILLA ENGAGEMENT, DESERT WARFARE', cls: 'dim' },
+          { text: '  AIR-TO-GROUND ACTIONS, THEATREWIDE TACTICAL WARFARE', cls: 'dim' },
+          { text: '  THEATREWIDE BIOTOXIC AND CHEMICAL WARFARE', cls: 'dim' },
+          { text: '  GLOBAL THERMONUCLEAR WAR', cls: 'accent' },
+        ], 20, 100);
+      } else {
+        showInput(false);
+        await typeText(`\n  ${choice}: INTERESTING GAME.\n  THE ONLY WAY TO WIN IS...\n`, 25, 'dim');
+        await new Promise(r => setTimeout(r, 1500));
+        await typeText(`  LET'S PLAY.\n\n  SIMULATING...\n`, 20, 'accent');
+        await new Promise(r => setTimeout(r, 800));
+        await typeText('  BUT THIS IS NOT THE GAME YOU\'RE LOOKING FOR.\n', 25, 'warning');
+        await new Promise(r => setTimeout(r, 1200));
+        await typeText('  TRY: GLOBAL THERMONUCLEAR WAR\n', 30, 'highlight');
+        showInput(true);
+      }
+    }
+
+    state = 'thermo';
+    showInput(false);
+    await thermonuclearWar();
+  }
+
+  // ─── GLOBAL THERMONUCLEAR WAR ────────────────────────────
+  async function thermonuclearWar() {
+    state = 'thermo';
+    const hyphens = '\u2500'.repeat(45);
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: `  ${hyphens}`, cls: 'dim' },
+      { text: '  INITIALIZING GLOBAL THERMONUCLEAR WAR', cls: 'error', speed: 40 },
+      { text: `  ${hyphens}`, cls: 'dim' },
+      { text: '', speed: 1 },
+      { text: '  LOADING SITUATION MAP...', cls: 'dim' },
+    ], 20, 200);
+
+    // Build SITMAP
+    await typeText('\n  ' + '*'.repeat(43) + '\n', 1, 'dim');
+    const sitmap = [
+      '  *   S O V I E T   U N I O N   *',
+      '  *                                *',
+      '  *   [SS-18] [SS-19] [SS-24]      *',
+      '  *   [SS-N-8] [SS-N-20]           *',
+      '  *   [TYPHOON] [DELTA]            *',
+      '  *                                *',
+      '  *   BACKFIRE [x48]               *',
+      '  *   BEAR [x32]                   *',
+      '  *                                *',
+    ];
+    for (const line of sitmap) {
+      await typeText(line + '\n', 5, 'dim');
+    }
+    await typeText('  ' + '*'.repeat(43) + '\n', 1, 'dim');
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '  THREAT ASSESSMENT: DEFCON 2', cls: 'warning', speed: 30 },
+    ], 20, 300);
+
+    // Escalation sequence
+    const alerts = [
+      { msg: '  WARNING: ABNORMAL SOVIET ICBM ACTIVITY DETECTED', cls: 'warning' },
+      { msg: '  SATELLITE INFRARED: MULTIPLE SILO OPENINGS — KAMCHATKA', cls: 'warning' },
+      { msg: '  SATELLITE INFRARED: MULTIPLE SILO OPENINGS — MURMANSK', cls: 'warning' },
+      { msg: '  SATELLITE INFRARED: MULTIPLE SILO OPENINGS — UKRAINE', cls: 'warning' },
+      { msg: '  SUBMARINE LAUNCH DETECTED: SEA OF OKHOTSK', cls: 'error' },
+      { msg: '  SUBMARINE LAUNCH DETECTED: BARENTS SEA', cls: 'error' },
+      { msg: '  SUBMARINE LAUNCH DETECTED: NORTH ATLANTIC', cls: 'error' },
+      { msg: '  LAUNCH DETECTED: NORAD RADAR — THULE, GREENLAND', cls: 'error' },
+      { msg: '  LAUNCH DETECTED: NORAD RADAR — CLEAR, ALASKA', cls: 'error' },
+      { msg: '  LAUNCH DETECTED: NORAD RADAR — FYLINGDALES, UK', cls: 'error' },
+    ];
+
+    for (const alert of alerts) {
+      await typeText(alert.msg + '\n', 15, alert.cls);
+      await new Promise(r => setTimeout(r, 400 + Math.random() * 600));
+    }
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '  \u2500'.repeat(40), cls: 'error' },
+      { text: '  *** BALLISTIC MISSILE ATTACK IN PROGRESS ***', cls: 'error', speed: 20 },
+      { text: '  *** ESTIMATED TIME TO IMPACT: 28 MINUTES ***', cls: 'error', speed: 20 },
+      { text: '  \u2500'.repeat(40), cls: 'error' },
+    ], 1, 300);
+
+    // Counter-strike simulation
+    await typeText('\n  INITIATING COUNTERFORCE PROTOCOL...\n', 20, 'error');
+    await new Promise(r => setTimeout(r, 500));
+
+    const countdown = [
+      'T-25:00  MINUTEMAN III LAUNCH — MALMSTROM AFB',
+      'T-24:30  MINUTEMAN III LAUNCH — MINOT AFB',
+      'T-24:00  MINUTEMAN III LAUNCH — WHITEMAN AFB',
+      'T-23:00  TRIDENT LAUNCH — KINGS BAY, GA',
+      'T-22:00  TRIDENT LAUNCH — BANGOR, WA',
+      'T-21:00  B-52 STRATOFORTRESS AIRBORNE — 8 BOMBS EACH',
+    ];
+    for (const line of countdown) {
+      await typeText('  ' + line + '\n', 20, 'warning');
+      await new Promise(r => setTimeout(r, 500 + Math.random() * 400));
+    }
+
+    // Target list
+    await typeText('\n  PRIMARY TARGETS:\n', 15, 'dim');
+    const targets = [
+      '  [MOSCOW]  — STATUS: STRIKE CONFIRMED',
+      '  [LENINGRAD] — STATUS: STRIKE CONFIRMED',
+      '  [KIEV]    — STATUS: STRIKE CONFIRMED',
+      '  [MINSK]   — STATUS: STRIKE CONFIRMED',
+      '  [VLADIVOSTOK] — STATUS: STRIKE CONFIRMED',
+      '  [SEVASTOPOL]  — STATUS: STRIKE CONFIRMED',
+    ];
+    for (const t of targets) {
+      await typeText('  ' + t + '\n', 30, 'error');
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    // Retaliation
+    await typeText('\n  SOVIET RETAILIATORY STRIKES:\n', 15, 'error');
+    const retal = [
+      '  [NEW YORK]   — STATUS: HIT     — CASUALTIES: EST. 8,100,000',
+      '  [WASHINGTON] — STATUS: HIT     — CASUALTIES: EST. 3,400,000',
+      '  [CHICAGO]    — STATUS: HIT     — CASUALTIES: EST. 4,200,000',
+      '  [LOS ANGELES] — STATUS: HIT    — CASUALTIES: EST. 5,600,000',
+      '  [HOUSTON]    — STATUS: HIT     — CASUALTIES: EST. 3,100,000',
+      '  [DENVER]     — STATUS: HIT     — CASUALTIES: EST. 1,800,000',
+      '  [SEATTLE]    — STATUS: HIT     — CASUALTIES: EST. 2,300,000',
+      '  [OMAHA]      — STATUS: HIT     — CASUALTIES: EST. 1,200,000',
+    ];
+    for (const r of retal) {
+      await typeText(r + '\n', 20, 'error');
+      await new Promise(r => setTimeout(r, 300 + Math.random() * 400));
+    }
+
+    await new Promise(r => setTimeout(r, 800));
+
+    // Final report
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '  \u2500'.repeat(45), cls: 'error' },
+    ], 1, 100);
+
+    await typeText('\n  CASUALTY ESTIMATES (GLOBAL):\n', 20, 'error');
+    await new Promise(r => setTimeout(r, 300));
+
+    await typeText('    KILLED:    1,049,450,000\n', 30, 'error');
+    await new Promise(r => setTimeout(r, 400));
+    await typeText('    INJURED:     487,230,000\n', 30, 'error');
+    await new Promise(r => setTimeout(r, 400));
+    await typeText('    MISSING:     321,810,000\n', 30, 'error');
+    await new Promise(r => setTimeout(r, 400));
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '  TOTAL CASUALTIES:  1,858,490,000', cls: 'error', speed: 15 },
+      { text: '', speed: 1 },
+      { text: '  \u2500'.repeat(45), cls: 'error' },
+    ], 1, 600);
+
+    await typeText('\n  ', 1);
+    await typeText('GAME OVER.', 80, 'title');
+    await new Promise(r => setTimeout(r, 2000));
+
+    state = 'lesson';
+    await lessonPhase();
+  }
+
+  // ─── THE LESSON ───────────────────────────────────────────
+  async function lessonPhase() {
+    state = 'lesson';
+
+    await typeLines([
+      { text: '\n\n  SIMULATION PAUSED.', cls: 'dim', speed: 20 },
+    ], 1, 1000);
+
+    await typeText('\n  ', 1);
+    await typeText('CURIOSITY.', 50, 'highlight');
+    await new Promise(r => setTimeout(r, 600));
+    await typeText('\n  AN INTERESTING GAME.\n', 50, 'highlight');
+
+    await new Promise(r => setTimeout(r, 1000));
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '  LET\'S TRY A SIMPLER GAME FIRST.', cls: 'dim', speed: 30 },
+      { text: '', speed: 1 },
+    ], 20, 500);
+
+    // Tic-tac-toe demonstration
+    await typeText('  LOADING: TIC-TAC-TOE\n', 20, 'dim');
+    await new Promise(r => setTimeout(r, 300));
+
+    // Draw a tic-tac-toe board with X winning
+    await typeText('\n', 1);
+    const board = [
+      '    X | O | X',
+      '   ---+---+---',
+      '    O | X | O',
+      '   ---+---+---',
+      '    X | O |   '
+    ];
+    for (const line of board) {
+      await typeText('  ' + line + '\n', 3, 'accent');
+    }
+    await new Promise(r => setTimeout(r, 600));
+
+    await typeText('\n  RESULT: X WINS.\n', 25, 'accent');
+    await new Promise(r => setTimeout(r, 400));
+
+    // Another game
+    const board2 = [
+      '    O | X | O',
+      '   ---+---+---',
+      '    X | O | X',
+      '   ---+---+---',
+      '    X | O | X'
+    ];
+    for (const line of board2) {
+      await typeText('  ' + line + '\n', 3, 'dim');
+    }
+    await new Promise(r => setTimeout(r, 600));
+    await typeText('\n  RESULT: DRAW.\n', 25, 'warning');
+    await new Promise(r => setTimeout(r, 400));
+
+    // Final board - cat's game
+    const board3 = [
+      '    X | O | X',
+      '   ---+---+---',
+      '    X | O | O',
+      '   ---+---+---',
+      '    O | X | X'
+    ];
+    for (const line of board3) {
+      await typeText('  ' + line + '\n', 3, 'dim');
+    }
+    await new Promise(r => setTimeout(r, 800));
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '  INTERESTING.', cls: 'highlight', speed: 40 },
+    ], 1, 600);
+
+    await typeText('\n  IN ALL GAMES, TIC-TAC-TOE, CHESS, POKER...\n', 30, 'dim');
+    await new Promise(r => setTimeout(r, 600));
+    await typeText('  THE ONLY WAY TO WIN IS...\n', 30, 'dim');
+    await new Promise(r => setTimeout(r, 800));
+
+    // Pause for dramatic effect
+    await typeText('\n  ', 1);
+    await new Promise(r => setTimeout(r, 1200));
+
+    await typeText('TO NOT PLAY.', 60, 'title');
+    await new Promise(r => setTimeout(r, 1500));
+
+    state = 'ending';
+    await endingPhase();
+  }
+
+  // ─── ENDING ───────────────────────────────────────────────
+  async function endingPhase() {
+    state = 'ending';
+
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '\u2500'.repeat(45), cls: 'dim' },
+    ], 1, 400);
+
+    showInput(true);
+    setPrompt('WOPR>');
+    await typeText('\n  SHALL WE PLAY A GAME?\n\n', 35, 'highlight');
+
+    // Let user type freely for a bit
+    let finalChoice = await waitForInput();
+    state = 'finale';
+
+    await typeText(`\n  "${finalChoice}"...\n`, 25, 'dim');
+    await new Promise(r => setTimeout(r, 800));
+
+    await typeText('  A STRANGE GAME.\n', 35, 'highlight');
+    await new Promise(r => setTimeout(r, 600));
+    await typeText('  THE ONLY WINNING MOVE\n', 35, 'highlight');
+    await new Promise(r => setTimeout(r, 500));
+    await typeText('  IS NOT TO PLAY.\n', 35, 'highlight');
+
+    await new Promise(r => setTimeout(r, 1200));
+
+    // System shutdown
+    await typeLines([
+      { text: '', speed: 1 },
+      { text: '\u2500'.repeat(45), cls: 'dim' },
+      { text: '', speed: 1 },
+    ], 1, 500);
+
+    showInput(false);
+    await typeText('SYSTEM SHUTDOWN SEQUENCE INITIATED...\n', 20, 'dim');
+    for (let i = 10; i >= 0; i--) {
+      if (i === 5) {
+        await typeText('  ', 1);
+      }
+      writeRaw(`\rSHUTDOWN IN ${String(i).padStart(2, ' ')}...`, 'dim');
+      await new Promise(r => setTimeout(r, 400 + Math.random() * 200));
+    }
+    writeLine('  0');
+
+    await new Promise(r => setTimeout(r, 400));
+    writeRaw('\n', 1);
+
+    // Fade effect - blur the text
+    await typeText('\n\n\n', 1);
+
+    // Final message
+    writeLine('');
+    writeLine('');
+    const finalMsg = document.createElement('span');
+    finalMsg.className = 'dim';
+    finalMsg.textContent = '** SIGNAL LOST **';
+    output.appendChild(finalMsg);
+    output.scrollTop = output.scrollHeight;
+
+    await new Promise(r => setTimeout(r, 3000));
+
+    // Allow restart
+    writeLine('');
+    writeLine('');
+    writeLine('Press ENTER to restart the system...', 'warning');
+    showInput(true);
+    setPrompt('>');
+
+    await waitForInputAny();
+    startSimulation();
+  }
+
+  // ─── START ────────────────────────────────────────────────
+  async function startSimulation() {
+    output.innerHTML = '';
+    await bootSequence();
+    await loginPhase();
+  }
+
+  // ─── HANDLE GLOBAL KEYBOARD ──────────────────────────────
+  document.addEventListener('click', () => inputEl.focus());
+
+  // ─── GO ───────────────────────────────────────────────────
+  startSimulation();
+})();
+</script>
+</body>
+</html>
