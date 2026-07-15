@@ -1,139 +1,138 @@
-██████████████████████████████████████████████████
-██                                          ██
-██   ██╗    ██╗ ██████╗ ██████╗ ██████╗    ██
-██   ██║    ██║██╔═══██╗██╔══██╗██╔══██╗   ██
-██   ██║ █╗ ██║██║   ██║██████╔╝██████╔╝   ██
-██   ██║███╗██║██║   ██║██╔═══╝ ██╔══██╗   ██
-██   ╚███╔███╔╝╚██████╔╝██║     ██║  ██║   ██
-██    ╚══╝╚══╝  ╚═════╝ ╚═╝     ╚═╝  ╚═╝   ██
-██                                          ██
-██     ████████╗███████╗██████╗ ███╗   ███╗ ██
-██     ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║ ██
-██        ██║   █████╗  ██████╔╝██╔████╔██║ ██
-██        ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║ ██
-██        ██║   ███████╗██║  ██║██║ ╚═╝ ██║ ██
-██        ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝ ██
-██                                          ██
-██     ███████╗██╗███╗   ███╗██╗   ██╗    ██
-██     ██╔════╝██║████╗ ████║╚██╗ ██╔╝    ██
-██     ███████╗██║██╔████╔██║ ╚████╔╝     ██
-██     ╚════██║██║██║╚██╔╝██║  ╚██╔╝      ██
-██     ███████║██║██║ ╚═╝ ██║   ██║       ██
-██     ╚══════╝╚═╝╚═╝     ╚═╝   ╚═╝       ██
-██                                          ██
-██████████████████████████████████████████████████
+ _    _  _________________
+| |  | ||  _  | ___ \ ___ \
+| |  | || | | | |_/ / |_/ /
+| |/\| || | | |  __/|    /
+\  /\  /\ \_/ / |   | |\ \
+ \/  \/  \___/\_|   \_| \_|
 
-         WAR OPERATIONS PLANNED RESPONSE
-          NORAD — CHEYENNE MOUNTAIN
-           CLASSIFIED COMPUTER ACCESS
-
-      ╔══════════════════════════════════╗
-      ║   SYSTEM STATUS:    ACTIVE       ║
-      ║   DEFCON LEVEL:     2            ║
-      ║   SECURITY CLASS:   TOP SECRET   ║
-      ║   CONNECTION:       1200 BAUD    ║
-      ╚══════════════════════════════════╝
+ _____________  __  ________  _____   __
+/_  __/ __/ _ \/  |/  /  _/ |/ / _ | / /
+ / / / _// , _/ /|_/ // //    / __ |/ /__
+/_/ /___/_/|_/_/  /_/___/_/|_/_/ |_/____/
 
 
-A faithful recreation of the WOPR terminal from the 1983 film
-"WarGames," rendered in your browser with full CRT aesthetics.
 
-═══ SYNOPSIS ════════════════════════════════════════════════
+A faithful terminal simulation of the WOPR computer from
+the 1983 film **WarGames** — rendered in your browser with
+full CRT aesthetics, variable-speed typewriter text, and
+zero dependencies.
 
-  "Greetings, Professor Falken."
+────────────────────────────────────────────────────────
 
-  A fully interactive simulation of the WOPR (War Operation
-  Planned Response) computer system. Experience the entire
-  dialogue tree from the film — from the initial 1200-baud
-  dial-up through Global Thermonuclear War to the chilling
-  conclusion: "The only winning move is not to play."
+   ╔══════════════════════════════════════════╗
+   ║   GREETINGS.  PROFESSOR FALKEN.         ║
+   ║                                          ║
+   ║   "SHALL WE PLAY A GAME?"               ║
+   ╚══════════════════════════════════════════╝
 
-  Built as a single self-contained HTML file. No build tools,
-  no frameworks, no dependencies. Just you, the terminal,
-  and the ghost of Joshua.
+────────────────────────────────────────────────────────
 
-═══ EXPERIENCE ══════════════════════════════════════════════
 
-  Phase 1 │ SYSTEM BOOT
-          └─ POST, memory test (640K), disk check,
-             peripheral initialization
+THE EXPERIENCE
+──────────────
 
-  Phase 2 │ MODEM DIAL-UP
-          └─ ATDT 415-555-2368 · Carrier at 1200 baud
-             XMODEM-CRC protocol · Backdoor detection
+  Phase 1  SYSTEM BOOT
+           POST, memory test (640K), disk check, peripheral init
 
-  Phase 3 │ LOGIN / FALKEN BACKDOOR
-          └─ "LOGON: PLEASE ENTER YOUR PASSWORD"
-             Search algorithm auto-types FALKEN
-             "GREETINGS. PROFESSOR FALKEN."
+  Phase 2  MODEM DIAL-UP
+           ATDT 415-555-2368 — Carrier at 1200 baud
+           XMODEM-CRC protocol — Backdoor detection
 
-  Phase 4 │ GAME SELECTION
-          └─ "SHALL WE PLAY A GAME?"
-             Full game list from the film
-             ▸ Pick any game for a short scene
-             ▸ GLOBAL THERMONUCLEAR WAR for the main event
+  Phase 3  LOGIN / FALKEN BACKDOOR
+           "LOGON: PLEASE ENTER YOUR PASSWORD"
+           Search algorithm auto-types FALKEN
+           "GREETINGS. PROFESSOR FALKEN."
 
-  Phase 5 │ GLOBAL THERMONUCLEAR WAR
-          └─ Satellite infrared detection
-             NORAD radar tracking (Thule, Clear, Fylingdales)
-             ICBM/SLBM launches · Counterforce protocol
-             City-level casualty reports
-             1,858,490,000 total casualties
+  Phase 4  GAME SELECTION
+           Full game list from the film
+           ▸ Pick any game for a short scene
+           ▸ GLOBAL THERMONUCLEAR WAR for the main event
 
-  Phase 6 │ THE LESSON
-          └─ Tic-tac-toe demonstration
-             "A STRANGE GAME."
-             "THE ONLY WAY TO WIN IS TO NOT PLAY."
+  Phase 5  GLOBAL THERMONUCLEAR WAR
+           Satellite infrared detection
+           NORAD radar tracking (Thule, Clear, Fylingdales)
+           ICBM/SLBM launches — Counterforce protocol
+           City-level casualty reports
+           1,858,490,000 total casualties
 
-  Phase 7 │ SYSTEM SHUTDOWN
-          └─ Countdown · Signal lost · Restart available
+  Phase 6  THE LESSON
+           Tic-tac-toe demonstration
+           "A STRANGE GAME."
+           "THE ONLY WAY TO WIN IS TO NOT PLAY."
 
-═══ CONTROLS ═══════════════════════════════════════════════
+  Phase 7  SYSTEM SHUTDOWN
+           Countdown — Signal lost — Restart available
 
-  Password prompt:   Type anything (any input works)
-  Game selection:    Type the name of a game
-  Main path:         Choose GLOBAL THERMONUCLEAR WAR
-  Continue:          Press ENTER when prompted
-  Restart:           Press ENTER after signal loss
 
-═══ LAUNCH ═════════════════════════════════════════════════
+CRT AESTHETIC
+─────────────
+
+  ∙ Scanlines           repeating 2px gradient overlay
+  ∙ Phosphor glow       #33ff33 with multi-layered text-shadow bloom
+  ∙ Screen curvature    radial gradient vignette on CRT bezel
+  ∙ Subtle flicker      random opacity oscillation at 8s interval
+  ∙ Noise overlay       SVG fractal turbulence at 1.5% opacity
+  ∙ VT323 font          authentic 1980s terminal typography (Google Fonts)
+  ∙ Typewriter text     variable-speed character-by-character output
+  ∙ Blinking cursor     800ms step-end CSS animation
+  ∙ Power LED           pulsing green indicator on monitor frame
+
+
+CONTROLS
+────────
+
+  Password prompt:    Type anything — any input grants access
+  Game selection:     Type the name of a game at the menu
+  Main path:          Choose GLOBAL THERMONUCLEAR WAR
+  Continue prompts:   Press ENTER when asked
+  Restart:            Press ENTER after signal loss
+
+  The menu accepts LIST or ? to re-display available games.
+  All other games play a short scene and return you to the menu.
+
+
+LAUNCH
+──────
 
   Open index.html directly in any modern browser:
 
       $ open index.html
 
-  Or serve locally with Python:
+  Or serve locally:
 
       $ python3 -m http.server 8080
-      # → http://localhost:8080
+      └─ http://localhost:8080
 
-  That's it. No npm install. No build step. No bullshit.
+  Or use the included server script:
 
-═══ CRT AESTHETIC ══════════════════════════════════════════
+      $ python3 serve.py
+      $ ./start.sh
 
-  • Scanlines ─ repeating 2px gradient overlay
-  • Phosphor glow ─ #33ff33 with text-shadow bloom
-  • Screen curvature ─ radial gradient vignette
-  • Subtle flicker ─ random opacity oscillation
-  • Noise overlay ─ SVG fractal noise at 1.5% opacity
-  • VT323 terminal font ─ authentic 1980s terminal typography
-  • Variable-speed typewriter text ─ 1200-baud simulation
-  • Blinking cursor ─ 800ms step-end animation
-  • Power LED ─ pulsing green indicator on monitor bezel
 
-═══ TIPS ═══════════════════════════════════════════════════
+FILES
+─────
 
-  • Set your browser to fullscreen (F11) for maximum immersion
-  • Dim the lights. Sit close to the screen.
-  • Use an old CRT monitor if you have one (or a portrait
-    orientation for that tall terminal look)
-  • Try it with a green-on-black terminal theme for bonus points
+  index.html     Self-contained simulation (877 lines, single file)
+  serve.py       Python HTTP server with retro terminal banner
+  start.sh       Convenience launcher (opens browser + starts server)
+  README.md      This file
 
-═══ CREDITS ════════════════════════════════════════════════
+
+TIPS
+────
+
+  · Set your browser to fullscreen (F11) for maximum immersion
+  · Dim the lights. Sit close to the screen.
+  · Use an old CRT monitor or a portrait-orientation display
+    for that tall terminal look
+  · Try it with a green-on-black terminal theme for bonus points
+
+
+CREDITS
+───────
 
   Inspired by the 1983 MGM film "WarGames"
-  Directed by John Badham · Written by Lawrence Lasker &
-  Walter F. Parkes
+  Directed by John Badham · Written by Lawrence Lasker & Walter F. Parkes
 
   Built with love for the command line generation.
 
